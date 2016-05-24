@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 """
 Usage:
-    pw-gen.py conf.yaml output
+    zea-mays template.yaml output
 
-pw-gen takes an input dictionary of words, possible prefixes, and postfixes, and 
+zea-mays takes an input dictionary of words, possible prefixes, and postfixes, and 
 produces every possible case permutation of these words, along with every
 possible prefix and postfix permutation. These will all be saved in an
 output text file.
