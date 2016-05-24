@@ -1,0 +1,127 @@
+#!/usr/bin/env python
+"""
+Usage:
+    pw-gen.py conf.yaml output
+
+pw-gen takes an input dictionary of words, possible prefixes, and postfixes, and 
+produces every possible case permutation of these words, along with every
+possible prefix and postfix permutation. These will all be saved in an
+output text file.
+
+The included translator dictionary does uppercase, lowercase, and l33t.
+
+The concept here is that people often take a word or term they know well,
+append/prepend one of a few symbols for added security, and perhaps mix
+cases, or commonly replace some letters with similar numbers.
+
+If you recall a set of base words, as well as the substitutions you typically
+use, and a list of your commonly used prefixes and/or postfixes, this script
+will generate all of the possible permutations of those items for a brute-force
+attack. 
+"""
+
+import csv
+import os, sys
+import yaml
+
+# default dictionary
+TRANSLATOR = {
+    'a' : ['a', 'A', '4'],
+    'b' : ['b', 'B'],
+    'c' : ['c', 'C'],
+    'd' : ['d', 'D'],
+    'e' : ['e', 'E', '3'],
+    'f' : ['f', 'F'],
+    'g' : ['g', 'G'],
+    'h' : ['h', 'H'],
+    'i' : ['i', 'I', '1'],
+    'j' : ['j', 'J'],
+    'k' : ['k', 'K'],
+    'l' : ['l', 'L', '1'],
+    'm' : ['m', 'M'],
+    'n' : ['n', 'N'],
+    'o' : ['o', 'O', '0'],
+    'p' : ['p', 'P'],
+    'q' : ['q', 'Q'],
+    'r' : ['r', 'R'],
+    's' : ['s', 'S', '5'],
+    't' : ['t', 'T', '7'],
+    'u' : ['u', 'U'],
+    'v' : ['v', 'V'],
+    'w' : ['w', 'W'],
+    'x' : ['x', 'X'],
+    'y' : ['y', 'Y'],
+    'z' : ['z', 'Z']
+} 
+
+def all_casings(input_string):
+    """
+    Recursively calls itself in order to apply the TRANSLATOR on each character.
+    """
+    if not input_string:
+        yield ""
+    else:
+        first = input_string[:1]
+
+        # handles numbers and symbols
+        if first.lower() == first.upper():
+            for sub_casing in all_casings(input_string[1:]):
+                yield first + sub_casing
+
+        # all items matched in TRANSLATOR
+        else:
+            for sub_casing in all_casings(input_string[1:]):
+
+                # for each entry in the dictionary, returns all matches
+                n_casings = len(TRANSLATOR[first])
+                for c in range(n_casings):
+                    yield TRANSLATOR[first][c] + sub_casing
+
+def permute(word):
+    """
+    Calls the all_casings iterator, returns output as list.
+    """    
+    return [x for x in all_casings(word)]
+
+
+def main(config, output):
+    """
+    First, generates all permutations using the translator. Next, generates
+    all possible prefix / postfix combinations. Finally writes out file
+    """
+    # load configuration
+    with open(config, 'r') as stream:
+        try:
+            config = yaml.safe_load(stream)
+        except yaml.YAMLError as exc:
+            sys.exit(exc) 
+   
+    # load in the variables 
+    words     = config['words']
+    prefixes  = config['prefixes']
+    postfixes = config['postfixes']
+
+    # generate all of the mangled versions, or permutations, of each word
+    permutations = []
+    for word in words: 
+        word = str(word)
+        permutations.extend(permute(word.lower()))
+
+    # now create all possible prefix / postfix combinations to create the candidates
+    candidates = []
+    for candidate in permutations:
+        candidates.append(candidate)
+        for pre in prefixes:
+            for post in postfixes:
+                candidates.append(str(pre) + candidate + str(post))
+
+    f = open(output, 'wb') 
+    for candidate in candidates:
+        f.write("%s\n" % candidate)
+    f.close()
+
+if __name__ == '__main__':
+    if len(sys.argv) == 3:
+        main(sys.argv[1], sys.argv[2])
+    else:
+        sys.exit(__doc__)
